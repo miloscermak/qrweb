@@ -2,7 +2,6 @@ const express = require('express');
 const QRCode = require('qrcode');
 const { nanoid } = require('nanoid');
 const path = require('path');
-const fs = require('fs').promises;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,17 +10,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-const dataDir = path.join(__dirname, 'data');
-
-async function ensureDataDir() {
-  try {
-    await fs.mkdir(dataDir, { recursive: true });
-  } catch (err) {
-    console.error('Error creating data directory:', err);
-  }
-}
-
-ensureDataDir();
+// In-memory storage for Vercel (data will reset on server restart)
+const dataStore = new Map();
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -44,10 +34,8 @@ app.post('/api/publish', async (req, res) => {
       url: pageUrl
     };
 
-    await fs.writeFile(
-      path.join(dataDir, `${id}.json`),
-      JSON.stringify(pageData, null, 2)
-    );
+    // Store in memory instead of file system
+    dataStore.set(id, pageData);
 
     res.json({
       success: true,
@@ -63,9 +51,13 @@ app.post('/api/publish', async (req, res) => {
 app.get('/p/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const dataFile = path.join(dataDir, `${id}.json`);
     
-    const data = JSON.parse(await fs.readFile(dataFile, 'utf-8'));
+    // Get data from memory store
+    const data = dataStore.get(id);
+    if (!data) {
+      return res.status(404).send('Stránka nenalezena');
+    }
+    
     const pageUrl = `${req.protocol}://${req.get('host')}/p/${id}`;
     const qrCodeDataUrl = await QRCode.toDataURL(pageUrl);
 

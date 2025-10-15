@@ -91,11 +91,30 @@ app.get('/p/:id', async (req, res) => {
       background-color: #f9f9f9;
       padding: 20px;
       border-radius: 8px;
-      white-space: pre-wrap;
       word-wrap: break-word;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       line-height: 1.6;
       font-size: 16px;
+    }
+    .content h1, .content h2, .content h3 {
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    .content h1 { font-size: 28px; }
+    .content h2 { font-size: 24px; }
+    .content h3 { font-size: 20px; }
+    .content p {
+      margin-bottom: 12px;
+    }
+    .content ul, .content ol {
+      margin-left: 20px;
+      margin-bottom: 12px;
+    }
+    .content blockquote {
+      border-left: 4px solid #ccc;
+      margin-left: 0;
+      padding-left: 16px;
+      color: #666;
     }
     .meta {
       color: #666;
@@ -112,7 +131,7 @@ app.get('/p/:id', async (req, res) => {
   </div>
   
   <div class="content">
-    ${escapeHtml(data.text)}
+    ${data.text}
   </div>
   
   <div class="meta">

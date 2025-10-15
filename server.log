@@ -1,0 +1,16 @@
+
+> qrweb@1.0.0 start
+> node server.js
+
+Server běží na http://localhost:3000
+SyntaxError: Bad escaped character in JSON at position 48 (line 1 column 49)
+    at JSON.parse (<anonymous>)
+    at parse (/Users/miloscermak/code/qrweb/node_modules/body-parser/lib/types/json.js:92:19)
+    at /Users/miloscermak/code/qrweb/node_modules/body-parser/lib/read.js:128:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:211:14)
+    at invokeCallback (/Users/miloscermak/code/qrweb/node_modules/raw-body/index.js:238:16)
+    at done (/Users/miloscermak/code/qrweb/node_modules/raw-body/index.js:227:7)
+    at IncomingMessage.onEnd (/Users/miloscermak/code/qrweb/node_modules/raw-body/index.js:287:7)
+    at IncomingMessage.emit (node:events:518:28)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)

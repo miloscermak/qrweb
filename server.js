@@ -37,13 +37,18 @@ app.post('/api/publish', async (req, res) => {
     };
 
     // Store data
+    console.log('useKV:', useKV, 'KV_URL:', !!process.env.KV_REST_API_URL, 'KV_TOKEN:', !!process.env.KV_REST_API_TOKEN);
+    
     if (useKV) {
       // Store in Vercel KV (permanent)
+      console.log('Storing in KV with id:', `page:${id}`);
       await kv.set(`page:${id}`, JSON.stringify(pageData));
+      console.log('Successfully stored in KV');
       // Optional: Set expiry to 1 year (31536000 seconds)
       // await kv.expire(`page:${id}`, 31536000);
     } else {
       // Store in memory for local development
+      console.log('Storing in memory (KV not available)');
       dataStore.set(id, pageData);
     }
 

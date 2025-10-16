@@ -42,7 +42,7 @@ app.post('/api/publish', async (req, res) => {
     if (useKV) {
       // Store in Vercel KV (permanent)
       console.log('Storing in KV with id:', `page:${id}`);
-      await kv.set(`page:${id}`, JSON.stringify(pageData));
+      await kv.set(`page:${id}`, pageData); // Store as object, not string
       console.log('Successfully stored in KV');
       // Optional: Set expiry to 1 year (31536000 seconds)
       // await kv.expire(`page:${id}`, 31536000);
@@ -75,7 +75,8 @@ app.get('/p/:id', async (req, res) => {
       if (!kvData) {
         return res.status(404).send('Stránka nenalezena');
       }
-      data = JSON.parse(kvData);
+      // KV already returns parsed object, no need to parse
+      data = typeof kvData === 'string' ? JSON.parse(kvData) : kvData;
     } else {
       // Get from memory store
       data = dataStore.get(id);

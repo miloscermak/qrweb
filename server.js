@@ -2,6 +2,7 @@ const express = require('express');
 const QRCode = require('qrcode');
 const { nanoid } = require('nanoid');
 const path = require('path');
+const { kv } = require('@vercel/kv');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,7 +11,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// In-memory storage for Vercel (data will reset on server restart)
+// Fallback to in-memory storage if KV is not available (for local development)
+const useKV = process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN;
 const dataStore = new Map();
 
 app.get('/', (req, res) => {
@@ -34,8 +36,16 @@ app.post('/api/publish', async (req, res) => {
       url: pageUrl
     };
 
-    // Store in memory instead of file system
-    dataStore.set(id, pageData);
+    // Store data
+    if (useKV) {
+      // Store in Vercel KV (permanent)
+      await kv.set(`page:${id}`, JSON.stringify(pageData));
+      // Optional: Set expiry to 1 year (31536000 seconds)
+      // await kv.expire(`page:${id}`, 31536000);
+    } else {
+      // Store in memory for local development
+      dataStore.set(id, pageData);
+    }
 
     res.json({
       success: true,
@@ -52,10 +62,21 @@ app.get('/p/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Get data from memory store
-    const data = dataStore.get(id);
-    if (!data) {
-      return res.status(404).send('Stránka nenalezena');
+    // Get data from storage
+    let data;
+    if (useKV) {
+      // Get from Vercel KV
+      const kvData = await kv.get(`page:${id}`);
+      if (!kvData) {
+        return res.status(404).send('Stránka nenalezena');
+      }
+      data = JSON.parse(kvData);
+    } else {
+      // Get from memory store
+      data = dataStore.get(id);
+      if (!data) {
+        return res.status(404).send('Stránka nenalezena');
+      }
     }
     
     const pageUrl = `${req.protocol}://${req.get('host')}/p/${id}`;

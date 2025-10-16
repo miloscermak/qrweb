@@ -8,10 +8,10 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
+    "@vercel/kv": "^1.0.1",
     "express": "^4.18.2",
-    "qrcode": "^1.5.3",
     "nanoid": "^3.3.7",
-    "@vercel/kv": "^1.0.1"
+    "qrcode": "^1.5.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

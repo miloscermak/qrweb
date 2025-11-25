@@ -3,6 +3,22 @@ const QRCode = require('qrcode');
 const { nanoid } = require('nanoid');
 const path = require('path');
 const { kv } = require('@vercel/kv');
+const createDOMPurify = require('isomorphic-dompurify');
+
+// Configure DOMPurify for safe HTML
+const DOMPurify = createDOMPurify;
+
+function sanitizeHtml(html) {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3',
+                   'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'span'],
+    ALLOWED_ATTR: ['href', 'target', 'style', 'class'],
+    ALLOW_DATA_ATTR: false,
+    ADD_ATTR: ['target'],
+    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input'],
+    FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover']
+  });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,12 +42,21 @@ app.post('/api/publish', async (req, res) => {
       return res.status(400).json({ error: 'Text is required' });
     }
 
+    // Sanitize HTML to prevent XSS attacks
+    const sanitizedText = sanitizeHtml(text);
+
+    // Check if content is effectively empty (just whitespace or empty tags)
+    const textContent = sanitizedText.replace(/<[^>]*>/g, '').trim();
+    if (!textContent) {
+      return res.status(400).json({ error: 'Text nemůže být prázdný' });
+    }
+
     const id = nanoid(10);
     const pageUrl = `${req.protocol}://${req.get('host')}/p/${id}`;
-    
+
     const pageData = {
       id,
-      text,
+      text: sanitizedText,
       createdAt: new Date().toISOString(),
       url: pageUrl
     };
@@ -94,6 +119,7 @@ app.get('/p/:id', async (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <title>Publikovaný text</title>
   <style>
     body {
@@ -174,17 +200,6 @@ app.get('/p/:id', async (req, res) => {
     res.status(404).send('Stránka nenalezena');
   }
 });
-
-function escapeHtml(text) {
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return text.replace(/[&<>"']/g, m => map[m]);
-}
 
 app.listen(PORT, () => {
   console.log(`Server běží na http://localhost:${PORT}`);

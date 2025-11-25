@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <title>Publikovat text s QR kódem</title>
   <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
   <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
@@ -112,7 +113,28 @@
     .result a:hover {
       text-decoration: underline;
     }
-    
+
+    .copy-btn {
+      display: inline-block;
+      margin-left: 10px;
+      padding: 6px 12px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    .copy-btn:hover {
+      background-color: #45a049;
+    }
+
+    .copy-btn.copied {
+      background-color: #2196F3;
+    }
+
     .error {
       color: #f44336;
       padding: 10px;
@@ -176,7 +198,10 @@
     <div class="result" id="result">
       <h3>Text byl úspěšně publikován!</h3>
       <p>Váš text je dostupný na této adrese:</p>
-      <p><a href="" target="_blank" id="resultLink"></a></p>
+      <p>
+        <a href="" target="_blank" id="resultLink"></a>
+        <button class="copy-btn" id="copyBtn" type="button">Kopírovat</button>
+      </p>
       <p>Stránka obsahuje QR kód pro snadné sdílení.</p>
       <p><small>Odkaz je trvalý a bude fungovat permanentně.</small></p>
     </div>
@@ -207,6 +232,34 @@
     const error = document.getElementById('error');
     const result = document.getElementById('result');
     const resultLink = document.getElementById('resultLink');
+    const copyBtn = document.getElementById('copyBtn');
+
+    // Copy URL to clipboard
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(resultLink.href);
+        copyBtn.textContent = 'Zkopírováno!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = 'Kopírovat';
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = resultLink.href;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        copyBtn.textContent = 'Zkopírováno!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = 'Kopírovat';
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      }
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

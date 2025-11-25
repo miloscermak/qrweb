@@ -3,21 +3,28 @@ const QRCode = require('qrcode');
 const { nanoid } = require('nanoid');
 const path = require('path');
 const { kv } = require('@vercel/kv');
-const createDOMPurify = require('isomorphic-dompurify');
+const sanitizeHtml = require('sanitize-html');
 
-// Configure DOMPurify for safe HTML
-const DOMPurify = createDOMPurify;
+// Configure sanitize-html for safe HTML
+const sanitizeOptions = {
+  allowedTags: ['p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3',
+                'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'span'],
+  allowedAttributes: {
+    'a': ['href', 'target'],
+    'span': ['style', 'class'],
+    'p': ['style', 'class']
+  },
+  allowedStyles: {
+    '*': {
+      'color': [/^#(0x)?[0-9a-f]+$/i, /^rgb\(/],
+      'background-color': [/^#(0x)?[0-9a-f]+$/i, /^rgb\(/],
+      'text-align': [/^left$/, /^right$/, /^center$/]
+    }
+  }
+};
 
-function sanitizeHtml(html) {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3',
-                   'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'a', 'span'],
-    ALLOWED_ATTR: ['href', 'target', 'style', 'class'],
-    ALLOW_DATA_ATTR: false,
-    ADD_ATTR: ['target'],
-    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input'],
-    FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover']
-  });
+function cleanHtml(html) {
+  return sanitizeHtml(html, sanitizeOptions);
 }
 
 const app = express();
@@ -43,7 +50,7 @@ app.post('/api/publish', async (req, res) => {
     }
 
     // Sanitize HTML to prevent XSS attacks
-    const sanitizedText = sanitizeHtml(text);
+    const sanitizedText = cleanHtml(text);
 
     // Check if content is effectively empty (just whitespace or empty tags)
     const textContent = sanitizedText.replace(/<[^>]*>/g, '').trim();
